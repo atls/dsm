@@ -3,7 +3,7 @@ name: Daily Stand Up Template
 about: Это шаблон стэндапа на каждый день
 title: "[daily stand up] ДД Месяц ГГГГ"
 labels: 'Type: Stand Up'
-assignees: Aleserche, aroundblacksneverrelax, shlommo, helceore, fiald, Bapen1k
+assignees: Aleserche, aroundblacksneverrelax, helceore, fiald, Bapen1k
 
 ---
 
