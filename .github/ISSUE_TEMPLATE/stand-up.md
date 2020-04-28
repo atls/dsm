@@ -3,7 +3,7 @@ name: Stand Up
 about: Это шаблон стэндапа на каждый день
 title: "[daily stand up] ДД Месяц ГГГГ"
 labels: 'Type: Stand Up'
-assignees: Aleserche, TorinAsakura, aroundblacksneverrelax, helceore, Trunutslover, Bapen1k, ilyassab
+assignees: Aleserche, TorinAsakura, ilyassab, tuogeniy
 
 ---
 
