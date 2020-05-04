@@ -2,14 +2,17 @@ name: Issues Creator
 
 on:
   schedule:
-    - cron: '41 14 * * *'
+    - cron: 0 0 * * *
 
 jobs:
-  stuff:
+  build:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: JasonEtco/create-an-issue@v2.4.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: wesleytodd/meeting-maker@v0
         with:
-          filename: .github/stand-up.md
+          token: ${{ secrets.GITHUB_TOKEN }}
+          schedules: 2020-05-04T09:00:00+03/P1D
+          createWithin: P30M
+          issueTitle: [daily stand up] <%= date.toFormat('dd-MM-yyyy') %>
+          issueTemplate: .github/stand-up.md
+          labels: 'Type: Stand Up'
