@@ -1,0 +1,15 @@
+name: Issues Creator
+
+on:
+  schedule:
+    - cron: 40 14 * * 0-7
+
+jobs:
+  stuff:
+    steps:
+      - uses: actions/checkout@v2
+      - uses: JasonEtco/create-an-issue@v2.4.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          filename: .github/stand-up.md
