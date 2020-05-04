@@ -1,0 +1,17 @@
+name: Issues Closer
+
+on:
+  schedule:
+    - cron: 0 0 * * *
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v2.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-issue-label: 'Type: Stand Up'
+          only-labels: 'Type: Stand Up'
+          days-before-stale: 1
+          days-before-close: 1
