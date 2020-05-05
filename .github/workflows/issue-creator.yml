@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: wesleytodd/meeting-maker@v0
         with:
-          token: '${{ secrets.GITHUB_TOKEN }}'
+          token: ${{ secrets.REPO_TOKEN }}
           schedules: 2020-05-04T09:00:00+03/P1D
           createWithin: T30M
           issueTitle: '[daily stand up] '

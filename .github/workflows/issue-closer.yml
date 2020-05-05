@@ -10,8 +10,8 @@ jobs:
     steps:
       - uses: actions/stale@v2.0.0
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ secrets.REPO_TOKEN }}
           stale-issue-label: 'Type: Stand Up'
-          only-labels: 'Type: Stand Up'
           days-before-stale: 1
           days-before-close: 1
+          debug-only: true
