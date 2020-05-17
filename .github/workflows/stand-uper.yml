@@ -1,0 +1,43 @@
+name: StandUper
+on:
+  schedule:
+    # every day at 5:00 UTC (8:00 MSK)
+    - cron:  '0 5 * * *'
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@0.9.0
+        with:
+          github-token: ${{secrets.REPO_TOKEN}}
+          script: |
+            const opts = github.issues.listForRepo.endpoint.merge({
+              ...context.issue,
+              labels: ['Type: Stand Up'],
+              state: 'open'
+            })
+            const issues = await github.paginate(opts)
+
+            for (const issue of issues) {
+              github.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              })
+            }
+
+            github.issues.create({
+              title: '[daily stand up] ' + new Date().toDateString(),
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              assignees: ['Aleserche', 'TorinAsakura', 'ilyassab', 'tuogeniy'],
+              labels: ['Type: Stand Up'],
+              body: `## Шаблон 
+                \`#### Какие задачи выполнял вчера? Укажи #issues и сообщи в каком они состоянии\`
+                \`#### Какие задачи будешь делать сегодня? Укажи #issues\`
+                \`#### Что тебя блокирует? (Этот пункт используется когда тебя что-то блокирует)\`
+                \`#### Есть ли личные дела из-за которых нужно отсутствовать на рабочем месте в течение рабочего дня? (Этот пункт используется когда дела есть)\`
+                `
+            })
