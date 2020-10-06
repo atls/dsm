@@ -1,9 +1,9 @@
 ---
-name: Stand Up
+name: Daily Stand Up Meeting
 about: Это шаблон стэндапа на каждый день
 title: "[daily stand up] ДД Месяц ГГГГ"
 labels: 'Type: Stand Up'
-assignees: Aleserche, TorinAsakura, ilyassab, tuogeniy
+assignees: TorinAsakura, tuogeniy
 ---
 
 ## Шаблон 

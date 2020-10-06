@@ -1,8 +1,8 @@
-name: StandUper
+name: DSM
 on:
   schedule:
     # every day at 5:00 UTC (8:00 MSK)
-    - cron:  '0 5 * * *'
+    - cron: '0 5 * * *'
 
 jobs:
   comment:
@@ -10,11 +10,11 @@ jobs:
     steps:
       - uses: actions/github-script@0.9.0
         with:
-          github-token: ${{secrets.REPO_TOKEN}}
+          github-token: ${{secrets.DSM_TOKEN}}
           script: |
             const opts = github.issues.listForRepo.endpoint.merge({
               ...context.issue,
-              labels: ['Type: Stand Up'],
+              labels: ['Type: DSM'],
               state: 'open'
             })
             const issues = await github.paginate(opts)
@@ -29,11 +29,11 @@ jobs:
             }
 
             github.issues.create({
-              title: '[daily stand up] ' + new Date().toDateString(),
+              title: '[DSM] ' + new Date().toDateString(),
               owner: context.repo.owner,
               repo: context.repo.repo,
-              assignees: ['TorinAsakura', 'ilyassab', 'tuogeniy', 'h4rdee'],
-              labels: ['Type: Stand Up'],
+              assignees: ['TorinAsakura', 'tuogeniy'],
+              labels: ['Type: DSM'],
               body: `## Шаблон 
                 \`#### Какие задачи выполнял вчера? Укажи #issues и сообщи в каком они состоянии\`
                 \`#### Какие задачи будешь делать сегодня? Укажи #issues\`
