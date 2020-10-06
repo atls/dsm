@@ -32,7 +32,7 @@ jobs:
               title: '[DSM] ' + new Date().toDateString(),
               owner: context.repo.owner,
               repo: context.repo.repo,
-              assignees: ['TorinAsakura', 'tuogeniy'],
+              assignees: ['TorinAsakura', 'tuogeniy', 'unmyke'],
               labels: ['Type: DSM'],
               body: `## Шаблон 
                 \`#### Какие задачи выполнял вчера? Укажи #issues и сообщи в каком они состоянии\`
