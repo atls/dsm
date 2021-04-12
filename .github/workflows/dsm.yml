@@ -20,7 +20,7 @@ jobs:
         with:
           github-token: ${{ secrets.DSM_TOKEN }}
           script: |
-            const organization = 'atlantis-lab'
+            const organization = 'atls'
             const team_slugs = ['lab']
             const body = function(){/*${{ steps.template.outputs.content }}*/}.toString()
             const opts = github.issues.listForRepo.endpoint.merge({
