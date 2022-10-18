@@ -22,7 +22,7 @@ jobs:
           github-token: ${{ secrets.DSM_TOKEN }}
           script: |
             const organization = 'atls'
-            const team_slugs = ['lab','design']
+            const team_slugs = ['dsm']
             const body = function(){/*${{ steps.template.outputs.content }}*/}.toString()
             const opts = github.issues.listForRepo.endpoint.merge({
               ...context.issue,
