@@ -38,7 +38,7 @@ jobs:
             let body = function(){/*${{ steps.template.outputs.content }}*/}.toString().slice(13, -3);
             const opts = github.rest.issues.listForRepo.endpoint.merge({
               ...context.issue,
-              labels: ['Type: DSM'],
+              type: 'DSM',
               state: 'open'
             });
 
@@ -71,6 +71,6 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               assignees: members,
-              labels: ['Type: DSM'],
+              type: 'DSM',
               body,
             });
