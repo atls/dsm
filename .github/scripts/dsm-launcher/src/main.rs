@@ -9,9 +9,9 @@ mod graphql_queries {
 }
 
 use graphql_queries::{
-    get_open_issues::{self, Variables as GetIssuesVars},
-    close_issue::{self, Variables as CloseIssueVars},
-    create_issue::{self, Variables as CreateIssueVars},
+    get_open_issues::{get_open_issues::Variables as GetIssuesVars, get_open_issues, GetOpenIssues},
+    close_issue::{close_issue::Variables as CloseIssueVars, CloseIssue},
+    create_issue::{create_issue::Variables as CreateIssueVars, CreateIssue},
 };
 
 #[tokio::main]
@@ -22,9 +22,9 @@ async fn main() -> Result<()> {
 
     let client = Client::builder().user_agent("dsm-launcher").build()?;
 
-    let issues_query = get_open_issues::GetOpenIssues::build_query(GetIssuesVars {
-        owner: repo_owner.clone(),
-        repo: repo_name.clone(),
+    let issues_query = GetOpenIssues::build_query(GetIssuesVars {
+        owner: repo_owner,
+        repo: repo_name,
     });
 
     let res = client
@@ -41,8 +41,8 @@ async fn main() -> Result<()> {
     let issues = repo_data.issues.nodes.unwrap();
 
     for issue in &issues {
-        if let Some(id) = issue.as_ref().and_then(|i| i.id.clone()) {
-            let close_mut = close_issue::CloseIssue::build_query(CloseIssueVars { id });
+        if let Some(id) = issue.as_ref().and_then(|i| Some(i.id.clone())) {
+            let close_mut = CloseIssue::build_query(CloseIssueVars { id });
             client
                 .post("https://api.github.com/graphql")
                 .bearer_auth(&github_token)
@@ -55,7 +55,7 @@ async fn main() -> Result<()> {
     let body = fs::read_to_string(".github/ISSUE_TEMPLATE/dsm.md")?;
     let title = format!("[DSM] {}", chrono::Utc::now().date_naive());
 
-    let create_mut = create_issue::CreateIssue::build_query(CreateIssueVars {
+    let create_mut = CreateIssue::build_query(CreateIssueVars {
         repo_id,
         title,
         body,
