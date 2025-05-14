@@ -24,9 +24,12 @@ jobs:
           latest: true
           fileName: dsm-launcher-x86_64-unknown-linux-gnu.tar.gz
           extract: true
+          out-file-path: .
 
       - name: Run DSM launcher
-        run: ./dsm-launcher
+        run: |
+          chmod +x dsm-launcher
+          ./dsm-launcher
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GITHUB_REPO_OWNER: ${{ github.repository_owner }}
