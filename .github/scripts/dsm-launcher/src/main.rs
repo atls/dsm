@@ -52,8 +52,8 @@ async fn main() -> Result<()> {
         }
     }
 
-    let body = fs::read_to_string(".github/ISSUE_TEMPLATE/dsm.md")?;
-    let title = format!("[DSM] {}", chrono::Utc::now().date_naive());
+    let body = fs::read_to_string("./.github/ISSUE_TEMPLATE/dsm.md")?;
+    let title = format!("[DSM] {}", chrono::Utc::now().date_naive().format("%a %b %d %Y"));
 
     let create_mut = CreateIssue::build_query(CreateIssueVars {
         repo_id,
