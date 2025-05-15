@@ -19,14 +19,11 @@ jobs:
         with:
           repository: ${{ github.repository }}
           latest: true
-          fileName: dsm-launcher-x86_64-unknown-linux-gnu.tar.gz
+          fileName: dsm-launcher-x86_64-unknown-linux-musl.tar.gz
           extract: true
-          out-file-path: ${{ github.action_path }}
 
       - name: Run DSM launcher
-        run: |
-          cd "${{ github.action_path }}"
-          ./dsm-launcher
+        run: ./dsm-launcher
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GITHUB_REPO_OWNER: ${{ github.repository_owner }}
