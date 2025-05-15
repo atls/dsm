@@ -1,0 +1,76 @@
+name: DSM
+on:
+  schedule:
+    # every day at 6:00 UTC (9:00 MSK)
+    - cron: "0 6 * * MON-FRI"
+  workflow_dispatch:
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.DSM_APP_ID }}
+          private-key: ${{ secrets.DSM_APP_SECRET }}
+          owner: ${{ github.repository_owner }}
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Read template
+        id: template
+        uses: juliangruber/read-file-action@v1
+        with:
+          path: ./.github/ISSUE_TEMPLATE/dsm.md
+
+      - name: Echo template
+        run: echo ${{ steps.template.outputs.content }}
+
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const organization = `${{ github.repository_owner }}`;
+            const team_slugs = ['dsm'];
+            let body = function(){/*${{ steps.template.outputs.content }}*/}.toString().slice(13, -3);
+            const opts = github.rest.issues.listForRepo.endpoint.merge({
+              ...context.issue,
+              type: 'DSM',
+              state: 'open'
+            });
+
+            const members = [];
+
+            for (const team_slug of team_slugs) {
+              const teams_response = await github.request("GET /orgs/{org}/teams/{team_slug}/members", {
+                team_slug: team_slug,
+                org: organization
+              });
+
+              members.push(...teams_response.data.map((member) => member.login));
+            };
+
+            const issues = await github.paginate(opts);
+
+            for (const issue of issues) {
+              github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              });
+            };
+
+            body += `\n\n<details>\n\n${members.map((member) => `@${member}`).join(', ')}\n\n</details>`;
+
+            await github.rest.issues.create({
+              title: `[DSM] ${new Date().toDateString()}`,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              assignees: members,
+              type: 'DSM',
+              body,
+            });
