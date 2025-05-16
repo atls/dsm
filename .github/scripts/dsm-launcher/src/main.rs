@@ -9,10 +9,9 @@ mod graphql_queries {
 }
 
 use graphql_queries::{
-    get_open_issues::{get_open_issues::Variables as GetIssuesVars, get_open_issues, GetOpenIssues},
+    get_open_issues_and_org::{get_open_issues_and_org::Variables as GetIssuesVars, get_open_issues_and_org, GetOpenIssuesAndOrg},
     close_issue::{close_issue::Variables as CloseIssueVars, CloseIssue},
     create_issue::{create_issue::Variables as CreateIssueVars, CreateIssue},
-    get_team_members::{get_team_members::Variables as GetTeamMembersVars, get_team_members, GetTeamMembers},
 };
 
 #[tokio::main]
@@ -20,12 +19,14 @@ async fn main() -> Result<()> {
     let github_token = env::var("GITHUB_TOKEN")?;
     let repo_owner = env::var("GITHUB_REPO_OWNER")?;
     let repo_name = env::var("GITHUB_REPO_NAME")?;
+    let team_slug = "DSM".to_string();
 
     let client = Client::builder().user_agent("dsm-launcher").build()?;
 
-    let issues_query = GetOpenIssues::build_query(GetIssuesVars {
+    let issues_query = GetOpenIssuesAndOrg::build_query(GetIssuesVars {
         owner: repo_owner.clone(),
         repo: repo_name,
+        team_slug: team_slug.clone(),
     });
 
     let res = client
@@ -34,10 +35,12 @@ async fn main() -> Result<()> {
         .json(&issues_query)
         .send()
         .await?
-        .json::<Response<get_open_issues::ResponseData>>()
-        .await?;
+        .json::<Response<get_open_issues_and_org::ResponseData>>()
+        .await?
+        .data
+        .unwrap();
 
-    let repo_data = res.data.unwrap().repository.unwrap();
+    let repo_data = res.repository.unwrap();
     let repo_id = repo_data.id;
     let issues = repo_data.issues.nodes.unwrap();
 
@@ -53,23 +56,7 @@ async fn main() -> Result<()> {
         }
     }
 
-    let team_slug = "DSM".to_string();
-
-    let team_query = GetTeamMembers::build_query(GetTeamMembersVars {
-        org: repo_owner,
-        team_slug: team_slug.clone(),
-    });
-
-    let res = client
-        .post("https://api.github.com/graphql")
-        .bearer_auth(&github_token)
-        .json(&team_query)
-        .send()
-        .await?
-        .json::<Response<get_team_members::ResponseData>>()
-        .await?;
-
-    let org_data = res.data.unwrap().organization.unwrap();
+    let org_data = res.organization.unwrap();
     let members = org_data.team.unwrap().members.nodes.unwrap();
 
     let assignees = members
