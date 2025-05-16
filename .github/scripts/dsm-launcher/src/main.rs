@@ -12,6 +12,7 @@ use graphql_queries::{
     get_open_issues::{get_open_issues::Variables as GetIssuesVars, get_open_issues, GetOpenIssues},
     close_issue::{close_issue::Variables as CloseIssueVars, CloseIssue},
     create_issue::{create_issue::Variables as CreateIssueVars, CreateIssue},
+    get_team_members::{get_team_members::Variables as GetTeamMembersVars, get_team_members, GetTeamMembers},
 };
 
 #[tokio::main]
@@ -23,7 +24,7 @@ async fn main() -> Result<()> {
     let client = Client::builder().user_agent("dsm-launcher").build()?;
 
     let issues_query = GetOpenIssues::build_query(GetIssuesVars {
-        owner: repo_owner,
+        owner: repo_owner.clone(),
         repo: repo_name,
     });
 
@@ -52,12 +53,40 @@ async fn main() -> Result<()> {
         }
     }
 
+    let team_slug = "DSM".to_string();
+
+    let team_query = GetTeamMembers::build_query(GetTeamMembersVars {
+        org: repo_owner,
+        team_slug: team_slug.clone(),
+    });
+
+    let res = client
+        .post("https://api.github.com/graphql")
+        .bearer_auth(&github_token)
+        .json(&team_query)
+        .send()
+        .await?
+        .json::<Response<get_team_members::ResponseData>>()
+        .await?;
+
+    let org_data = res.data.unwrap().organization.unwrap();
+    let members = org_data.team.unwrap().members.nodes.unwrap();
+
+    let assignees = members
+        .iter()
+        .filter_map(|x| {
+            x.as_ref().and_then(|y| Some(y.login.clone()))
+        })
+        .collect::<Vec<String>>();
+
     let body = fs::read_to_string("./.github/ISSUE_TEMPLATE/dsm.md")?;
     let title = format!("[DSM] {}", chrono::Utc::now().date_naive().format("%a %b %d %Y"));
 
     let create_mut = CreateIssue::build_query(CreateIssueVars {
         repo_id,
         title,
+        type_: team_slug,
+        assignees,
         body,
     });
 
