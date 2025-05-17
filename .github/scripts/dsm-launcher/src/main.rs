@@ -17,13 +17,26 @@ use queries::{
 async fn main() -> Result<()> {
     let (repo_id, issues) = get_issues().await?;
 
-    close_issue(
-        issues, 
-    ).await?;
+    close_issue(issues)
+        .await
+        .unwrap_or_else(|x| {
+            eprintln!("{}", x)
+    });
 
-    let id = get_team().await?;
-    
-    let assignees = get_members(id).await?;
+    let assignees = match get_team().await {
+        Ok(id) => {
+            get_members(id)
+                .await
+                .unwrap_or_else(|x| {
+                    eprintln!("{}", x);
+                    Vec::new()
+                })
+        },
+        Err(x) => {
+            eprintln!("{}", x);
+            Vec::new()
+        }
+    };
 
     create_issue(
         repo_id,
