@@ -1,0 +1,7 @@
+query GetTeam($org: String!, $team_slug: String!) {
+    organization(login: $login) {
+        team(slug: $team_slug) {
+            id
+        }
+    }
+}

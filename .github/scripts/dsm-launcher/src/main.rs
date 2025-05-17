@@ -9,7 +9,8 @@ use queries::{
     close_issues::close_issue,
     create_issue::create_issue,
     get_issues::get_issues,
-    get_members::get_members
+    get_members::get_members,
+    get_team::get_team
 };
 
 #[tokio::main]
@@ -20,7 +21,9 @@ async fn main() -> Result<()> {
         issues, 
     ).await?;
 
-    let assignees = get_members().await?;
+    let id = get_team().await?;
+    
+    let assignees = get_members(id).await?;
 
     create_issue(
         repo_id,

@@ -1,6 +1,7 @@
-query GetTeamMembers($org: String!, $team_slug: String!) {
-    organization(login: $org) {
-        team(slug: $team_slug) {
+query GetTeamMembers($id: ID!) {
+    node(id: $id) {
+        __typename
+        ... on Team {
             members {
                 nodes {
                     login
