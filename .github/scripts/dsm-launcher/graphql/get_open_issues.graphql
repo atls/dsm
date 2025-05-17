@@ -1,0 +1,12 @@
+query GetOpenIssues($owner: String!, $repo: String!, $team_slug: String!) {
+  repository(owner: $owner, name: $repo) {
+    id
+    issues(first: 100, states: OPEN) {
+      nodes {
+        id
+        number
+        title
+      }
+    }
+  }
+}
