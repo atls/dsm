@@ -5,11 +5,11 @@ use std::env;
 
 use crate::graphql_queries::{
     close_issue::{close_issue::Variables as CloseIssueVars, CloseIssue},
-    get_open_issues::get_open_issues::GetOpenIssuesRepositoryIssuesNodes as IssuesNodes,
+    get_open_issues::get_open_issues::GetOpenIssuesNodeOnRepositoryIssuesNodes as IssueNodes,
 };
 
 pub async fn close_issue(
-    issues: Vec<Option<IssuesNodes>>,
+    issues: Vec<Option<IssueNodes>>,
 ) -> Result<()> {
     let client = Client::builder().user_agent("dsm-launcher").build()?;
     let github_token = env::var("GITHUB_TOKEN")?;

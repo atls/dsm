@@ -4,19 +4,18 @@ use reqwest::Client;
 use std::env;
 
 use crate::graphql_queries::get_team::{
-    get_team::{self, Variables as GetTeamVars},
+    get_team::{self, Variables as GetTeamVars, GetTeamNode},
     GetTeam,
 };
 
-pub async fn get_team() -> Result<String> {
+pub async fn get_team(org_id: String) -> Result<String> {
     let client = Client::builder().user_agent("dsm-launcher").build()?;
     let github_token = env::var("GITHUB_TOKEN")?;
-    let repo_owner = env::var("GITHUB_REPO_OWNER")?;
     let team_slug = "DSM".to_string();
 
     let team_query = GetTeam::build_query(GetTeamVars {
-        org: repo_owner,
-        team_slug: team_slug,
+        id: org_id,
+        team_slug
     });
 
     let res = client
@@ -31,10 +30,14 @@ pub async fn get_team() -> Result<String> {
     let org_data = res
         .data
         .unwrap()
-        .organization
-        .ok_or_else(|| anyhow!("Organization not found"))?;
+        .node;
 
-    let id = org_data
+    let id = match org_data {
+        Some(GetTeamNode::Organization(x)) => x,
+        _ => {
+            return Err(anyhow!("No organization found"));
+        }
+    }
         .team
         .ok_or_else(|| anyhow!("Team not found"))?
         .id;

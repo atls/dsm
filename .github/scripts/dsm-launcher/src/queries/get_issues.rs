@@ -1,26 +1,21 @@
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use graphql_client::{GraphQLQuery, Response};
 use reqwest::Client;
 use std::env;
 
 use crate::graphql_queries::get_open_issues::{
     get_open_issues::{
-        self, GetOpenIssuesRepositoryIssuesNodes as IssuesNodes, Variables as GetIssuesVars,
+        self, Variables as GetIssuesVars, GetOpenIssuesNode, GetOpenIssuesNodeOnRepositoryIssuesNodes as IssueNodes
     },
     GetOpenIssues,
 };
 
-pub async fn get_issues() -> Result<(String, Vec<Option<IssuesNodes>>)> {
+pub async fn get_issues(repo_id: String) -> Result<Vec<Option<IssueNodes>>> {
     let client = Client::builder().user_agent("dsm-launcher").build()?;
     let github_token = env::var("GITHUB_TOKEN")?;
-    let repo_name = env::var("GITHUB_REPO_NAME")?;
-    let repo_owner = env::var("GITHUB_REPO_OWNER")?;
-    let team_slug = "DSM".to_string();
 
     let issues_query = GetOpenIssues::build_query(GetIssuesVars {
-        owner: repo_owner,
-        repo: repo_name,
-        team_slug: team_slug.clone(),
+        id: repo_id
     });
 
     let res = client
@@ -32,9 +27,17 @@ pub async fn get_issues() -> Result<(String, Vec<Option<IssuesNodes>>)> {
         .json::<Response<get_open_issues::ResponseData>>()
         .await?;
 
-    let repo_data = res.data.unwrap().repository.unwrap();
-    let issues = repo_data.issues.nodes.unwrap();
-    let repo_id = repo_data.id;
+    let repo_data = res.data.unwrap().node;
 
-    Ok((repo_id, issues))
+    let issues = match repo_data {
+        Some(GetOpenIssuesNode::Repository(x)) => x,
+        _ => {
+            return Err(anyhow!("No issues found"));
+        }
+    }
+        .issues
+        .nodes
+        .unwrap();
+
+    Ok(issues)
 }
