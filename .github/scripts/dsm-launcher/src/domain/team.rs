@@ -1,21 +1,16 @@
-pub struct Team {
-    id: TeamId,
-    team_slug: String,
-}
+use std::ops::Deref;
 
-impl Team {
-    pub fn new(id: TeamId, team_slug: String) -> Self {
-        Team { id, team_slug }
-    }
-}
-
-pub struct TeamId(String);
+pub struct TeamId(pub String);
 
 impl TeamId {
     pub fn new(id: String) -> Self {
         TeamId(id)
     }
-    pub fn as_str(&self) -> &str {
-        &self.0 
+}
+
+impl Deref for TeamId {
+    type Target = str;
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }

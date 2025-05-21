@@ -1,6 +1,17 @@
+use std::ops::Deref;
+
 pub struct Member {
     pub id: MemberId,
     pub login: String,
+}
+
+impl Member {
+    pub fn new(id: MemberId, login: String) -> Self {
+        Member {
+            id,
+            login
+        }
+    }
 }
 
 pub struct MemberId(String);
@@ -9,7 +20,11 @@ impl MemberId {
     pub fn new(id: String) -> Self {
         MemberId(id)
     }
-    pub fn as_str(&self) -> &str {
-        &self.0 
+}
+
+impl Deref for MemberId {
+    type Target = str;
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }

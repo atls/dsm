@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use super::member::Member;
 
 pub struct Issue {
@@ -15,7 +17,11 @@ impl IssueId {
     pub fn new(id: String) -> Self {
         IssueId(id)
     }
-    pub fn as_str(&self) -> &str {
-        &self.0 
+}
+
+impl Deref for IssueId {
+    type Target = str;
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }

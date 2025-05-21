@@ -14,45 +14,51 @@ use crate::infrastructure::{
     github_graphql_client::GitHubGraphQLClient
 };
 
+#[derive(Clone)]
 pub struct GitHubIssueAdapter {
     pub client: GitHubGraphQLClient,
+}
+
+impl GitHubIssueAdapter {
+    pub fn new(client: GitHubGraphQLClient) -> Self {
+        GitHubIssueAdapter {
+            client
+        }
+    }
 }
 
 #[async_trait]
 impl IssueRepository for GitHubIssueAdapter {
     async fn get_issues(&self, repo_id: &RepoId) -> Result<Vec<IssueId>> {
         let vars = GetOpenIssuesVars {
-            id: repo_id.as_str().to_string()
+            id: repo_id.to_string()
         };
 
         let response = self.client.execute::<GetOpenIssues>(vars).await?;
 
-        if let Some(repo_data) = response.data {
-            if let Some(node) = repo_data.node {
-                let issues = match node {
-                    GetOpenIssuesNode::Repository(x) => x,
-                    _ => {
-                        return Err(anyhow!("No issues found"));
-                    }
-                }.issues.nodes;
-                
-                if let Some(issues) = issues {
-                    return Ok(issues
-                        .into_iter()
-                        .filter_map(|x| {
-                            if let Some(y) = x {
-                                return Some(IssueId::new(y.id))
-                            }
-                            None
-                        } 
-                    )
-                    .collect::<Vec<IssueId>>());
-
-                }
-            }
+        if let Some(errors) = response.errors {
+            return Err(anyhow!("GraphQL error: {:?}", errors));
         }
 
-        Err(anyhow!("No response data was found"))
+        let repo_data = response.data.ok_or_else(|| anyhow!("No repository data was found"))?;
+        let node = repo_data.node.ok_or_else(|| anyhow!("No repository node data was found"))?;
+        let issues = match node {
+            GetOpenIssuesNode::Repository(x) => x,
+            _ => {
+                return Err(anyhow!("No issues found"));
+            }
+        }.issues.nodes;
+
+        Ok(issues
+            .ok_or_else(|| anyhow!("No issues found"))?
+            .into_iter()
+            .filter_map(|x| {
+                if let Some(y) = x {
+                    return Some(IssueId::new(y.id))
+                }
+                None
+            })
+            .collect::<Vec<IssueId>>())
     }
 
     async fn create_issue(&self, issue: Issue) -> Result<IssueId> {
@@ -71,25 +77,31 @@ impl IssueRepository for GitHubIssueAdapter {
 
         let response = self.client.execute::<CreateIssue>(vars).await?;
 
-        if let Some(data) = response.data {
-            if let Some(create_issue) = data.create_issue {
-                if let Some(issue) = create_issue.issue {
-                    return Ok(IssueId::new(issue.id));
-                }
-            }
-
-            return Err(anyhow!("Failed to create an issue"));
+        if let Some(errors) = response.errors {
+            return Err(anyhow!("GraphQL error: {:?}", errors));
         }
 
-        Err(anyhow!("Failed to send GraphQL request"))
+        let response_data = response.data.ok_or_else(|| anyhow!("Create issue returned an empty body"))?;
+        let issue = response_data.create_issue.ok_or_else(|| anyhow!("No created issue was found"))?;
+
+        Ok(IssueId::new(
+            issue
+            .issue
+            .ok_or_else(|| anyhow!("No created issue body was found"))?
+            .id
+        ))
     }
 
     async fn close_issue(&self, issue_id: &IssueId) -> Result<()> {
         let vars = CloseIssueVars {
-            id: issue_id.as_str().to_string()
+            id: issue_id.to_string()
         };
 
-        self.client.execute::<CloseIssue>(vars).await?;
+        let response = self.client.execute::<CloseIssue>(vars).await?;
+
+        if let Some(errors) = response.errors {
+            return Err(anyhow!("GraphQL error: {:?}", errors));
+        }
 
         Ok(())
     }

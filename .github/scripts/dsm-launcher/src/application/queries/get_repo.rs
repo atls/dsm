@@ -1,11 +1,14 @@
 use anyhow::Result;
 
-use crate::domain::{org::OrgId, repo::RepoId};
+use crate::domain::{
+    org::OrgId, 
+    repo::RepoId, 
+    repository::OrgRepository
+};
 
-use crate::domain::repository::OrgRepository;
-
+#[derive(Clone)]
 pub struct GetRepoQuery<R: OrgRepository> {
-    repo: R,
+    pub repo: R,
 }
 
 impl<R: OrgRepository> GetRepoQuery<R> {

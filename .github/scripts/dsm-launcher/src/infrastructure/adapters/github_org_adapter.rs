@@ -4,8 +4,17 @@ use anyhow::{Result, anyhow, Ok};
 use crate::{domain::{org::OrgId, repo::RepoId, repository::OrgRepository}, graphql_queries::{get_org::{get_org::Variables as GetOrgVars, GetOrg}, get_repo::{get_repo::{GetRepoNode, Variables as GetRepoVars}, GetRepo}}, infrastructure::github_graphql_client::GitHubGraphQLClient};
 
 
+#[derive(Clone)]
 pub struct GitHubOrgAdapter {
     pub client: GitHubGraphQLClient,
+}
+
+impl GitHubOrgAdapter {
+    pub fn new(client: GitHubGraphQLClient) -> Self {
+        GitHubOrgAdapter {
+            client
+        }
+    }
 }
 
 #[async_trait]
@@ -16,43 +25,41 @@ impl OrgRepository for GitHubOrgAdapter {
         };
         
         let response = self.client.execute::<GetOrg>(vars)
-            .await?
-            .data;
+            .await?;
 
-        if let Some(response_data) = response {
-            if let Some(org) = response_data.organization {
-                return Ok(OrgId::new(org.id));
-            }
+        if let Some(errors) = response.errors {
+            return Err(anyhow!("GraphQL error: {:?}", errors));
         }
 
-        Err(anyhow!("No organization found"))
+        let response_data = response.data.ok_or_else(|| anyhow!("get_org returned an empty response"))?;
+        let org = response_data.organization.ok_or_else(|| anyhow!("No organization was found"))?;
+
+        Ok(OrgId::new(org.id))
     }
 
     async fn get_repo(&self, org_id: &OrgId, repo_name: &str) -> Result<RepoId> {
         let vars = GetRepoVars {
-            id: org_id.as_str().to_string(),
+            id: org_id.to_string(),
             repo: repo_name.to_string(),
         };
 
         let response = self.client.execute::<GetRepo>(vars)
-            .await?
-            .data;
+            .await?;
 
-        if let Some(response_data) = response {
-            match response_data.node {
-                Some(GetRepoNode::Organization(x)) => {
-                    if let Some(repo) = x.repository {
-                        return Ok(RepoId::new(repo.id));
-                    } else {
-                        return Err(anyhow!("No org data found"));
-                    }
-                },
-                _ => {
-                    return Err(anyhow!("No organization found"));
-                }
-            }
+        if let Some(errors) = response.errors {
+            return Err(anyhow!("GraphQL error: {:?}", errors));
         }
 
-        Err(anyhow!("Failed to recieve response"))      
+        let response_data = response.data.ok_or_else(|| anyhow!("get_repo returned an empty response"))?;
+        let node = response_data.node.ok_or_else(|| anyhow!("No repository node data was found"))?;
+        let org = match node {
+            GetRepoNode::Organization(org) => org,
+            _ => {
+                return Err(anyhow!("No organization was found"));
+            }
+        };
+        let repo = org.repository.ok_or_else(|| anyhow!("No repository was found in the org"))?;
+
+        Ok(RepoId::new(repo.id))
     }
 }

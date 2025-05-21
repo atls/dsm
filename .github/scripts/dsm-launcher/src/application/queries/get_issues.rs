@@ -2,8 +2,9 @@ use anyhow::Result;
 
 use crate::domain::{issue::IssueId, repo::RepoId, repository::IssueRepository};
 
+#[derive(Clone)]
 pub struct GetIssuesQuery<R: IssueRepository> {
-    repo: R,
+    pub repo: R,
 }
 
 impl<R: IssueRepository> GetIssuesQuery<R> {

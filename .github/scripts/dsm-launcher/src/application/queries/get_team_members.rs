@@ -1,8 +1,9 @@
 use anyhow::Result;
 use crate::domain::{member::Member, repository::MemberRepository, team::TeamId};
 
+#[derive(Clone)]
 pub struct GetTeamMembersQuery<R: MemberRepository> {
-    repo: R,
+    pub repo: R,
 }
 
 impl<R: MemberRepository> GetTeamMembersQuery<R> {

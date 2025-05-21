@@ -2,8 +2,9 @@ use anyhow::Result;
 
 use crate::domain::{issue::IssueId, repository::IssueRepository};
 
+#[derive(Clone)]
 pub struct CloseIssueCommand<R: IssueRepository> {
-    repo: R,
+    pub repo: R,
 }
 
 impl<R: IssueRepository> CloseIssueCommand<R> {
