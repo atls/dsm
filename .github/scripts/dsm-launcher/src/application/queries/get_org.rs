@@ -3,10 +3,10 @@ use graphql_client::{GraphQLQuery, Response};
 use reqwest::Client;
 use std::env;
 
-use crate::graphql_queries::get_org::{
+use crate::{domain::{org::OrgId, repository::OrgRepository}, graphql_queries::get_org::{
     get_org::{self, Variables as GetOrgVars},
     GetOrg,
-};
+}};
 
 pub async fn get_org() -> Result<String> {
     let client = Client::builder().user_agent("dsm-launcher").build()?;
@@ -34,4 +34,15 @@ pub async fn get_org() -> Result<String> {
         .id;
     
     Ok(org_id)
+}
+
+
+pub struct GetOrgQuery<R: OrgRepository> {
+    repo: R,
+}
+
+impl<R: OrgRepository> GetOrgQuery<R> {
+    pub async fn execute(&self, owner:  &str) -> Result<OrgId> {
+        self.repo.get_org(owner).await
+    }
 }

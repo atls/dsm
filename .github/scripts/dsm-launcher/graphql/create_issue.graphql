@@ -7,8 +7,7 @@ mutation CreateIssue($repoId: ID!, $title: String!, $body: String!, $assignees: 
     body: $body
   }) {
     issue {
-      number
-      title
+      id
     }
   }
 }

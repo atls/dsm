@@ -4,6 +4,7 @@ query GetTeamMembers($id: ID!) {
         ... on Team {
             members {
                 nodes {
+                    id,
                     login
                 }
             }

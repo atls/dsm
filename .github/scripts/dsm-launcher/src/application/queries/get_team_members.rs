@@ -3,10 +3,10 @@ use graphql_client::{GraphQLQuery, Response};
 use reqwest::Client;
 use std::env;
 
-use crate::graphql_queries::get_team_members::{
-    get_team_members::{self, Variables as GetTeamMembersVars, GetTeamMembersNode},
+use crate::{domain::{member::Member, org::OrgId, repo::RepoId, repository::MemberRepository, team::TeamId}, graphql_queries::get_team_members::{
+    get_team_members::{self, GetTeamMembersNode, Variables as GetTeamMembersVars},
     GetTeamMembers,
-};
+}};
 
 pub async fn get_members(
     id: String
@@ -50,4 +50,16 @@ pub async fn get_members(
         .collect::<Vec<String>>();
 
     Ok(assignees)
+}
+
+
+
+pub struct GetTeamMembersQuery<R: MemberRepository> {
+    repo: R,
+}
+
+impl<R: MemberRepository> GetTeamMembersQuery<R> {
+    pub async fn execute(&self, team_id: &TeamId) -> Result<Vec<Member>> {
+        self.repo.get_team_members(team_id).await
+    }
 }
