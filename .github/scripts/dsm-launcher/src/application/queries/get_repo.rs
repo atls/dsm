@@ -1,12 +1,6 @@
-use anyhow::{anyhow, Ok, Result};
-use graphql_client::{GraphQLQuery, Response};
-use reqwest::Client;
-use std::env;
+use anyhow::Result;
 
-use crate::{domain::{org::OrgId, repo::RepoId}, graphql_queries::get_repo::{
-    get_repo::{self, Variables as GetRepoVars},
-    GetRepo,
-}};
+use crate::domain::{org::OrgId, repo::RepoId};
 
 use crate::domain::repository::OrgRepository;
 
