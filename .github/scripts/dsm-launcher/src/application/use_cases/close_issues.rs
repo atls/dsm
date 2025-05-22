@@ -13,7 +13,7 @@ use crate::domain::repository::{
     OrgRepository
 };
 
-pub async fn close_old_issues<R: OrgRepository, I: IssueRepository>(
+pub async fn close_issues<R: OrgRepository, I: IssueRepository>(
     get_org: GetOrgQuery<R>,
     get_repo: GetRepoQuery<R>,
     get_issues: GetIssuesQuery<I>,

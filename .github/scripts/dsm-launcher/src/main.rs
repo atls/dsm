@@ -5,7 +5,6 @@ use application::queries::get_issues::GetIssuesQuery;
 use application::queries::get_org::GetOrgQuery;
 use application::queries::get_repo::GetRepoQuery;
 use application::queries::get_team::GetTeamQuery;
-use application::queries::get_team_members;
 use application::queries::get_team_members::GetTeamMembersQuery;
 use infrastructure::adapters::github_issue_adapter::GitHubIssueAdapter;
 use infrastructure::adapters::github_member_adapter::GitHubMemberAdapter;
@@ -23,7 +22,7 @@ mod domain;
 
 use infrastructure::github_graphql_client::GitHubGraphQLClient;
 use application::use_cases::{
-    close_old_issues::close_old_issues,
+    close_issues::close_issues,
     create_issue::create_issue,
 };
 
