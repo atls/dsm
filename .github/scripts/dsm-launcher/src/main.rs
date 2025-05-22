@@ -65,8 +65,6 @@ async fn main() -> Result<()> {
         repo: adapter
     };
 
-    
-
     close_issues(
         get_org.clone(),
         get_repo.clone(),
@@ -90,15 +88,3 @@ async fn main() -> Result<()> {
 
     Ok(())
 }
-
-/*
-    let repo_owner = env::var("GITHUB_REPO_OWNER")?;
-    let repo_name = env::var("GITHUB_REPO_NAME")?;
-    let team_slug = "DSM".to_string();
-
-    let body = fs::read_to_string("./.github/ISSUE_TEMPLATE/dsm.md")?;
-    let title: String = format!(
-        "[DSM] {}",
-        chrono::Utc::now().date_naive().format("%a %b %d %Y")
-    );
-*/
