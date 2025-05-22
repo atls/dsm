@@ -3,30 +3,40 @@ use anyhow::{Result, anyhow, Ok};
 
 use crate::{
     domain::{
-        member::{Member, MemberId}, org::OrgId, repository::MemberRepository, team::TeamId
-    }, graphql_queries::{get_team::{get_team::{GetTeamNode, Variables as GetTeamVars}, GetTeam}, get_team_members::{get_team_members::{GetTeamMembersNode, Variables as GetTeamMembersVars}, GetTeamMembers}}, infrastructure::github_graphql_client::GitHubGraphQLClient
-};
-
-#[derive(Clone)]
-pub struct GitHubMemberAdapter {
-    pub client: GitHubGraphQLClient,
-}
-
-impl GitHubMemberAdapter {
-    pub fn new(client: GitHubGraphQLClient) -> Self {
-        GitHubMemberAdapter {
-            client
+        member::{
+            Member, 
+            MemberId
+        }, 
+        org::OrgId, 
+        repository::MemberRepository, 
+        team::TeamId
+    }, 
+    graphql_queries::{
+        get_team::{
+            get_team::{
+                GetTeamNode, 
+                Variables as GetTeamVars
+            }, 
+            GetTeam
+        }, 
+        get_team_members::{
+            get_team_members::{
+                GetTeamMembersNode, 
+                Variables as GetTeamMembersVars
+            }, 
+            GetTeamMembers
         }
     }
-}
+};
+
+use super::GitHubAdapter;
 
 #[async_trait]
-impl MemberRepository for GitHubMemberAdapter {
+impl MemberRepository for GitHubAdapter {
     async fn get_team_members(&self, team_id: &TeamId) -> Result<Vec<Member>> {
         let variables = GetTeamMembersVars {
             id: team_id.to_string()
         };
-
 
         let response = self.client.execute::<GetTeamMembers>(variables)
             .await?;
@@ -87,3 +97,4 @@ impl MemberRepository for GitHubMemberAdapter {
         Ok(TeamId::new(team.id))
     }
 }
+

@@ -1,10 +1,11 @@
 use anyhow::Result;
+use std::rc::Rc;
 
 use crate::domain::{issue::{Issue, IssueId}, repository::IssueRepository};
 
 #[derive(Clone)]
 pub struct CreateIssueCommand<R: IssueRepository> {
-    pub repo: R,
+    pub repo: Rc<R>,
 }
 
 impl<R: IssueRepository> CreateIssueCommand<R> {

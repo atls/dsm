@@ -1,24 +1,30 @@
 use async_trait::async_trait;
 use anyhow::{Result, anyhow, Ok};
 
-use crate::{domain::{org::OrgId, repo::RepoId, repository::OrgRepository}, graphql_queries::{get_org::{get_org::Variables as GetOrgVars, GetOrg}, get_repo::{get_repo::{GetRepoNode, Variables as GetRepoVars}, GetRepo}}, infrastructure::github_graphql_client::GitHubGraphQLClient};
-
-
-#[derive(Clone)]
-pub struct GitHubOrgAdapter {
-    pub client: GitHubGraphQLClient,
-}
-
-impl GitHubOrgAdapter {
-    pub fn new(client: GitHubGraphQLClient) -> Self {
-        GitHubOrgAdapter {
-            client
+use crate::{
+    domain::{
+        repo::RepoId,
+        org::OrgId,
+        repository::OrgRepository
+    }, 
+    graphql_queries::{
+        get_org::{
+            get_org::Variables as GetOrgVars, 
+            GetOrg
+        }, get_repo::{
+            get_repo::{
+                GetRepoNode, 
+                Variables as GetRepoVars
+            }, 
+            GetRepo
         }
     }
-}
+};
+
+use super::GitHubAdapter;
 
 #[async_trait]
-impl OrgRepository for GitHubOrgAdapter {
+impl OrgRepository for GitHubAdapter {
     async fn get_org(&self, owner: &str) -> Result<OrgId> {
         let vars = GetOrgVars {
             org: owner.to_string()
@@ -63,3 +69,4 @@ impl OrgRepository for GitHubOrgAdapter {
         Ok(RepoId::new(repo.id))
     }
 }
+

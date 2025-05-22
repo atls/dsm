@@ -1,34 +1,36 @@
 use async_trait::async_trait;
-use anyhow::{anyhow, Ok, Result};
+use anyhow::{Result, anyhow, Ok};
 
-use crate::domain::issue::IssueId;
-use crate::domain::repo::RepoId;
 use crate::domain::{
     repository::IssueRepository,
-    issue::Issue,
+    issue::{
+        Issue, 
+        IssueId
+    },
+    repo::RepoId,
 };
-use crate::graphql_queries::close_issue::{CloseIssue, close_issue::Variables as CloseIssueVars};
-use crate::graphql_queries::create_issue::{CreateIssue, create_issue::Variables as CreateIssueVars};
-use crate::graphql_queries::get_open_issues::{GetOpenIssues, get_open_issues::{Variables as GetOpenIssuesVars, GetOpenIssuesNode},};
-use crate::infrastructure::{
-    github_graphql_client::GitHubGraphQLClient
-};
-
-#[derive(Clone)]
-pub struct GitHubIssueAdapter {
-    pub client: GitHubGraphQLClient,
-}
-
-impl GitHubIssueAdapter {
-    pub fn new(client: GitHubGraphQLClient) -> Self {
-        GitHubIssueAdapter {
-            client
-        }
+use crate::graphql_queries::{
+    close_issue::{
+        CloseIssue, 
+        close_issue::Variables as CloseIssueVars
+    },
+    create_issue::{
+        CreateIssue, 
+        create_issue::Variables as CreateIssueVars,
+    },
+    get_open_issues::{
+        GetOpenIssues, 
+        get_open_issues::{
+            Variables as GetOpenIssuesVars, 
+            GetOpenIssuesNode
+        },
     }
-}
+};
+
+use super::GitHubAdapter;
 
 #[async_trait]
-impl IssueRepository for GitHubIssueAdapter {
+impl IssueRepository for GitHubAdapter {
     async fn get_issues(&self, repo_id: &RepoId) -> Result<Vec<IssueId>> {
         let vars = GetOpenIssuesVars {
             id: repo_id.to_string()

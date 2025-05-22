@@ -6,11 +6,10 @@ use application::queries::get_org::GetOrgQuery;
 use application::queries::get_repo::GetRepoQuery;
 use application::queries::get_team::GetTeamQuery;
 use application::queries::get_team_members::GetTeamMembersQuery;
-use infrastructure::adapters::github_issue_adapter::GitHubIssueAdapter;
-use infrastructure::adapters::github_member_adapter::GitHubMemberAdapter;
-use infrastructure::adapters::github_org_adapter::GitHubOrgAdapter;
+use infrastructure::github_adapter::GitHubAdapter;
 use std::fs;
 use std::env;
+use std::rc::Rc;
 
 mod graphql_queries {
     include!(concat!(env!("CARGO_MANIFEST_DIR"), "/graphql/mod.rs"));
@@ -42,30 +41,28 @@ async fn main() -> Result<()> {
         env::var("GITHUB_TOKEN")?,
     )?;
     
-    let org_adapter = GitHubOrgAdapter::new(client.clone());
-    let issue_adapter = GitHubIssueAdapter::new(client.clone());
-    let member_adapter = GitHubMemberAdapter::new(client);
+    let adapter = Rc::new(GitHubAdapter::new(client.clone()));
 
     let get_org = GetOrgQuery {
-        repo: org_adapter.clone()
+        repo: adapter.clone()
     };
     let get_repo = GetRepoQuery {
-        repo: org_adapter
+        repo: adapter.clone()
     };
     let get_issues = GetIssuesQuery {
-        repo: issue_adapter.clone()
+        repo: adapter.clone()
     };
     let close_issue = CloseIssueCommand {
-        repo: issue_adapter.clone()
+        repo: adapter.clone()
     };
     let create_issue_ = CreateIssueCommand {
-        repo: issue_adapter
+        repo: adapter.clone()
     };
     let get_team = GetTeamQuery {
-        repo: member_adapter.clone()
+        repo: adapter.clone()
     };
     let get_team_members = GetTeamMembersQuery {
-        repo: member_adapter
+        repo: adapter
     };
 
     

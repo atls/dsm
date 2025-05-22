@@ -1,10 +1,11 @@
 use anyhow::Result;
+use std::rc::Rc;
 
 use crate::domain::{org::OrgId, repository::MemberRepository, team::TeamId};
 
 #[derive(Clone)]
 pub struct GetTeamQuery<R: MemberRepository> {
-    pub repo: R,
+    pub repo: Rc<R>,
 }
 
 impl<R: MemberRepository> GetTeamQuery<R> {
