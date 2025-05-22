@@ -1,8 +1,9 @@
 use async_trait::async_trait;
-use anyhow::{Result, anyhow, Ok};
+use anyhow::{Result, Ok};
 
 use crate::{
     domain::{
+        errors::org_repository::OrgRepositoryError,
         repo::RepoId,
         org::OrgId,
         repository::OrgRepository
@@ -21,7 +22,10 @@ use crate::{
     }
 };
 
-use super::GitHubAdapter;
+use super::{
+    errors::GitHubAdapterError,
+    GitHubAdapter
+};
 
 #[async_trait]
 impl OrgRepository for GitHubAdapter {
@@ -34,11 +38,11 @@ impl OrgRepository for GitHubAdapter {
             .await?;
 
         if let Some(errors) = response.errors {
-            return Err(anyhow!("GraphQL error: {:?}", errors));
+            return Err(GitHubAdapterError::GraphQL(errors).into());
         }
 
-        let response_data = response.data.ok_or_else(|| anyhow!("get_org returned an empty response"))?;
-        let org = response_data.organization.ok_or_else(|| anyhow!("No organization was found"))?;
+        let response_data = response.data.ok_or(OrgRepositoryError::EmptyGetOrgResponse)?;
+        let org = response_data.organization.ok_or(OrgRepositoryError::OrgNotFound)?;
 
         Ok(OrgId::new(org.id))
     }
@@ -53,18 +57,18 @@ impl OrgRepository for GitHubAdapter {
             .await?;
 
         if let Some(errors) = response.errors {
-            return Err(anyhow!("GraphQL error: {:?}", errors));
+            return Err(GitHubAdapterError::GraphQL(errors).into());
         }
 
-        let response_data = response.data.ok_or_else(|| anyhow!("get_repo returned an empty response"))?;
-        let node = response_data.node.ok_or_else(|| anyhow!("No repository node data was found"))?;
+        let response_data = response.data.ok_or(OrgRepositoryError::EmptyGetRepoResponse)?;
+        let node = response_data.node.ok_or(OrgRepositoryError::RepoNodeNotFound)?;
         let org = match node {
             GetRepoNode::Organization(org) => org,
             _ => {
-                return Err(anyhow!("No organization was found"));
+                return Err(OrgRepositoryError::OrgNotFound.into());
             }
         };
-        let repo = org.repository.ok_or_else(|| anyhow!("No repository was found in the org"))?;
+        let repo = org.repository.ok_or(OrgRepositoryError::RepoNotFound)?;
 
         Ok(RepoId::new(repo.id))
     }

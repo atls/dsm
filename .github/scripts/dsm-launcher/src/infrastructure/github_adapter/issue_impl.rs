@@ -1,7 +1,8 @@
 use async_trait::async_trait;
-use anyhow::{Result, anyhow, Ok};
+use anyhow::{Result, Ok};
 
 use crate::domain::{
+    errors::issue_repository::IssueRepositoryError,
     repository::IssueRepository,
     issue::{
         Issue, 
@@ -27,7 +28,10 @@ use crate::graphql_queries::{
     }
 };
 
-use super::GitHubAdapter;
+use super::{
+    errors::GitHubAdapterError,
+    GitHubAdapter
+};
 
 #[async_trait]
 impl IssueRepository for GitHubAdapter {
@@ -39,27 +43,22 @@ impl IssueRepository for GitHubAdapter {
         let response = self.client.execute::<GetOpenIssues>(vars).await?;
 
         if let Some(errors) = response.errors {
-            return Err(anyhow!("GraphQL error: {:?}", errors));
+            return Err(GitHubAdapterError::GraphQL(errors).into());
         }
 
-        let repo_data = response.data.ok_or_else(|| anyhow!("No repository data was found"))?;
-        let node = repo_data.node.ok_or_else(|| anyhow!("No repository node data was found"))?;
+        let repo_data = response.data.ok_or(IssueRepositoryError::RepoDataNotFound)?;
+        let node = repo_data.node.ok_or(IssueRepositoryError::RepoNodeNotFound)?;
         let issues = match node {
             GetOpenIssuesNode::Repository(x) => x,
             _ => {
-                return Err(anyhow!("No issues found"));
+                return Err(IssueRepositoryError::UnexpectedNodeType.into());
             }
         }.issues.nodes;
 
         Ok(issues
-            .ok_or_else(|| anyhow!("No issues found"))?
+            .ok_or(IssueRepositoryError::IssuesWereNotFound)?
             .into_iter()
-            .filter_map(|x| {
-                if let Some(y) = x {
-                    return Some(IssueId::new(y.id))
-                }
-                None
-            })
+            .filter_map(|x| x.map(|issue| IssueId::new(issue.id)))
             .collect::<Vec<IssueId>>())
     }
 
@@ -80,16 +79,16 @@ impl IssueRepository for GitHubAdapter {
         let response = self.client.execute::<CreateIssue>(vars).await?;
 
         if let Some(errors) = response.errors {
-            return Err(anyhow!("GraphQL error: {:?}", errors));
+            return Err(GitHubAdapterError::GraphQL(errors).into());
         }
 
-        let response_data = response.data.ok_or_else(|| anyhow!("Create issue returned an empty body"))?;
-        let issue = response_data.create_issue.ok_or_else(|| anyhow!("No created issue was found"))?;
+        let response_data = response.data.ok_or(IssueRepositoryError::EmptyCreateIssueResponse)?;
+        let issue = response_data.create_issue.ok_or(IssueRepositoryError::CreatedIssueNotFound)?;
 
         Ok(IssueId::new(
             issue
             .issue
-            .ok_or_else(|| anyhow!("No created issue body was found"))?
+            .ok_or(IssueRepositoryError::CreatedIssueBodyNotFound)?
             .id
         ))
     }
@@ -102,7 +101,7 @@ impl IssueRepository for GitHubAdapter {
         let response = self.client.execute::<CloseIssue>(vars).await?;
 
         if let Some(errors) = response.errors {
-            return Err(anyhow!("GraphQL error: {:?}", errors));
+            return Err(GitHubAdapterError::GraphQL(errors).into());
         }
 
         Ok(())

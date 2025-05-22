@@ -1,8 +1,9 @@
 use async_trait::async_trait;
-use anyhow::{Result, anyhow, Ok};
+use anyhow::{Result, Ok};
 
 use crate::{
     domain::{
+        errors::member_repository::MemberRepositoryError,
         member::{
             Member, 
             MemberId
@@ -29,7 +30,10 @@ use crate::{
     }
 };
 
-use super::GitHubAdapter;
+use super::{
+    errors::GitHubAdapterError,
+    GitHubAdapter
+};
 
 #[async_trait]
 impl MemberRepository for GitHubAdapter {
@@ -42,18 +46,18 @@ impl MemberRepository for GitHubAdapter {
             .await?;
 
         if let Some(errors) = response.errors {
-            return Err(anyhow!("GraphQL error: {:?}", errors));
+            return Err(GitHubAdapterError::GraphQL(errors).into());
         }
 
-        let response_data = response.data.ok_or_else(|| anyhow!("get_team_members returned an empty response"))?;
-        let node = response_data.node.ok_or_else(|| anyhow!("No team node was found"))?;
+        let response_data = response.data.ok_or(MemberRepositoryError::EmptyTeamMembersResponse)?;
+        let node = response_data.node.ok_or(MemberRepositoryError::TeamNodeNotFound)?;
         let team = match node {
             GetTeamMembersNode::Team(team) => team,
             _ => {
-                return Err(anyhow!("No team was found on the node"));
+                return Err(MemberRepositoryError::TeamNotFound.into());
             }
         };
-        let members = team.members.nodes.ok_or_else(|| anyhow!("No team members were found"))?;
+        let members = team.members.nodes.ok_or(MemberRepositoryError::TeamMembersWereNotFound)?;
 
         Ok(members
             .into_iter()
@@ -81,18 +85,18 @@ impl MemberRepository for GitHubAdapter {
             .await?;
 
         if let Some(errors) = response.errors {
-            return Err(anyhow!("GraphQL error: {:?}", errors));
+            return Err(GitHubAdapterError::GraphQL(errors).into());
         }
 
-        let response_data = response.data.ok_or_else(|| anyhow!("get_team returned empty response"))?;
-        let node = response_data.node.ok_or_else(|| anyhow!("No team node was found in the response data"))?;
+        let response_data = response.data.ok_or(MemberRepositoryError::EmptyTeamResponse)?;
+        let node = response_data.node.ok_or(MemberRepositoryError::TeamResponseNodeNotFound)?;
         let org = match node {
             GetTeamNode::Organization(org) => org,
             _ => {
-                return Err(anyhow!("No organization was found")); 
+                return Err(MemberRepositoryError::OrgNotFound.into()); 
             }  
         };
-        let team = org.team.ok_or_else(|| anyhow!("No team was found"))?;
+        let team = org.team.ok_or(MemberRepositoryError::TeamNotFound)?;
 
         Ok(TeamId::new(team.id))
     }

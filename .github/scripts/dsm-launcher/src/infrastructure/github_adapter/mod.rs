@@ -3,6 +3,7 @@ use super::github_graphql_client::GitHubGraphQLClient;
 mod issue_impl;
 mod member_impl;
 mod org_impl;
+mod errors;
 
 #[derive(Clone)]
 pub struct GitHubAdapter {
