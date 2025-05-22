@@ -1,0 +1,10 @@
+query GetRepo($id: String!, $repo: String!) {
+  node(id: $id) {
+    __typename
+    ... on Organization {
+      repository(name: $repo) {
+        id
+      }
+    }
+  }
+}

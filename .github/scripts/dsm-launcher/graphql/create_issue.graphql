@@ -1,12 +1,13 @@
-mutation CreateIssue($repoId: ID!, $title: String!, $body: String!) {
+mutation CreateIssue($repoId: ID!, $title: String!, $body: String!, $assignees: [String!]!, $type: String!) {
   createIssue(input: {
     repositoryId: $repoId,
     title: $title,
+    assignees: $assignees,
+    type: type,
     body: $body
   }) {
     issue {
-      number
-      title
+      id
     }
   }
 }
