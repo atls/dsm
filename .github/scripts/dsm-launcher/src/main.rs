@@ -70,7 +70,7 @@ async fn main() -> Result<()> {
 
     
 
-    close_old_issues(
+    close_issues(
         get_org.clone(),
         get_repo.clone(),
         get_issues,
