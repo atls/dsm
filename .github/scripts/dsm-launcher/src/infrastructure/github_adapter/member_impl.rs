@@ -3,7 +3,6 @@ use anyhow::{Result, Ok};
 
 use crate::{
     domain::{
-        errors::member_repository::MemberRepositoryError,
         member::{
             Member, 
             MemberId
@@ -30,6 +29,12 @@ use crate::{
     }
 };
 
+use crate::domain::errors::{
+    member::MemberError,
+    org::OrgError,
+    team::TeamError
+};
+
 use super::{
     errors::GitHubAdapterError,
     GitHubAdapter
@@ -49,15 +54,15 @@ impl MemberRepository for GitHubAdapter {
             return Err(GitHubAdapterError::GraphQL(errors).into());
         }
 
-        let response_data = response.data.ok_or(MemberRepositoryError::EmptyTeamMembersResponse)?;
-        let node = response_data.node.ok_or(MemberRepositoryError::TeamNodeNotFound)?;
+        let response_data = response.data.ok_or(MemberError::EmptyTeamMembersResponse)?;
+        let node = response_data.node.ok_or(TeamError::TeamNodeNotFound)?;
         let team = match node {
             GetTeamMembersNode::Team(team) => team,
             _ => {
-                return Err(MemberRepositoryError::TeamNotFound.into());
+                return Err(GitHubAdapterError::UnexpectedNodeType.into());
             }
         };
-        let members = team.members.nodes.ok_or(MemberRepositoryError::TeamMembersWereNotFound)?;
+        let members = team.members.nodes.ok_or(MemberError::TeamMembersWereNotFound)?;
 
         Ok(members
             .into_iter()
@@ -88,15 +93,15 @@ impl MemberRepository for GitHubAdapter {
             return Err(GitHubAdapterError::GraphQL(errors).into());
         }
 
-        let response_data = response.data.ok_or(MemberRepositoryError::EmptyTeamResponse)?;
-        let node = response_data.node.ok_or(MemberRepositoryError::TeamResponseNodeNotFound)?;
+        let response_data = response.data.ok_or(TeamError::EmptyTeamResponse)?;
+        let node = response_data.node.ok_or(TeamError::TeamResponseNodeNotFound)?;
         let org = match node {
             GetTeamNode::Organization(org) => org,
             _ => {
-                return Err(MemberRepositoryError::OrgNotFound.into()); 
+                return Err(OrgError::OrgNotFound.into()); 
             }  
         };
-        let team = org.team.ok_or(MemberRepositoryError::TeamNotFound)?;
+        let team = org.team.ok_or(TeamError::TeamNotFound)?;
 
         Ok(TeamId::new(team.id))
     }

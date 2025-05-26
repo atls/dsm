@@ -1,16 +1,7 @@
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum IssueRepositoryError {
-    #[error("No repository data was found")]
-    RepoDataNotFound,
-
-    #[error("No repository node data was found")]
-    RepoNodeNotFound,
-
-    #[error("Unexpected node type: expected Repository")]
-    UnexpectedNodeType,
-
+pub enum IssueError {
     #[error("No issues found in repository")]
     IssuesWereNotFound,
 

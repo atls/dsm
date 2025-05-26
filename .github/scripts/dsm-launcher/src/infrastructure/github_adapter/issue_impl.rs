@@ -2,7 +2,6 @@ use async_trait::async_trait;
 use anyhow::{Result, Ok};
 
 use crate::domain::{
-    errors::issue_repository::IssueRepositoryError,
     repository::IssueRepository,
     issue::{
         Issue, 
@@ -28,6 +27,11 @@ use crate::graphql_queries::{
     }
 };
 
+use crate::domain::errors::{
+    issue::IssueError,
+    repo::RepoError,
+};
+
 use super::{
     errors::GitHubAdapterError,
     GitHubAdapter
@@ -46,17 +50,17 @@ impl IssueRepository for GitHubAdapter {
             return Err(GitHubAdapterError::GraphQL(errors).into());
         }
 
-        let repo_data = response.data.ok_or(IssueRepositoryError::RepoDataNotFound)?;
-        let node = repo_data.node.ok_or(IssueRepositoryError::RepoNodeNotFound)?;
+        let repo_data = response.data.ok_or(RepoError::RepoDataNotFound)?;
+        let node = repo_data.node.ok_or(RepoError::RepoNodeNotFound)?;
         let issues = match node {
             GetOpenIssuesNode::Repository(x) => x,
             _ => {
-                return Err(IssueRepositoryError::UnexpectedNodeType.into());
+                return Err(GitHubAdapterError::UnexpectedNodeType.into());
             }
         }.issues.nodes;
 
         Ok(issues
-            .ok_or(IssueRepositoryError::IssuesWereNotFound)?
+            .ok_or(IssueError::IssuesWereNotFound)?
             .into_iter()
             .filter_map(|x| x.map(|issue| IssueId::new(issue.id)))
             .collect::<Vec<IssueId>>())
@@ -82,13 +86,13 @@ impl IssueRepository for GitHubAdapter {
             return Err(GitHubAdapterError::GraphQL(errors).into());
         }
 
-        let response_data = response.data.ok_or(IssueRepositoryError::EmptyCreateIssueResponse)?;
-        let issue = response_data.create_issue.ok_or(IssueRepositoryError::CreatedIssueNotFound)?;
+        let response_data = response.data.ok_or(IssueError::EmptyCreateIssueResponse)?;
+        let issue = response_data.create_issue.ok_or(IssueError::CreatedIssueNotFound)?;
 
         Ok(IssueId::new(
             issue
             .issue
-            .ok_or(IssueRepositoryError::CreatedIssueBodyNotFound)?
+            .ok_or(IssueError::CreatedIssueBodyNotFound)?
             .id
         ))
     }

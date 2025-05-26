@@ -3,7 +3,6 @@ use anyhow::{Result, Ok};
 
 use crate::{
     domain::{
-        errors::org_repository::OrgRepositoryError,
         repo::RepoId,
         org::OrgId,
         repository::OrgRepository
@@ -20,6 +19,11 @@ use crate::{
             GetRepo
         }
     }
+};
+
+use crate::domain::errors::{
+    repo::RepoError,
+    org::OrgError,
 };
 
 use super::{
@@ -41,8 +45,8 @@ impl OrgRepository for GitHubAdapter {
             return Err(GitHubAdapterError::GraphQL(errors).into());
         }
 
-        let response_data = response.data.ok_or(OrgRepositoryError::EmptyGetOrgResponse)?;
-        let org = response_data.organization.ok_or(OrgRepositoryError::OrgNotFound)?;
+        let response_data = response.data.ok_or(OrgError::EmptyGetOrgResponse)?;
+        let org = response_data.organization.ok_or(OrgError::OrgNotFound)?;
 
         Ok(OrgId::new(org.id))
     }
@@ -60,15 +64,15 @@ impl OrgRepository for GitHubAdapter {
             return Err(GitHubAdapterError::GraphQL(errors).into());
         }
 
-        let response_data = response.data.ok_or(OrgRepositoryError::EmptyGetRepoResponse)?;
-        let node = response_data.node.ok_or(OrgRepositoryError::RepoNodeNotFound)?;
+        let response_data = response.data.ok_or(RepoError::EmptyGetRepoResponse)?;
+        let node = response_data.node.ok_or(RepoError::RepoNodeNotFound)?;
         let org = match node {
             GetRepoNode::Organization(org) => org,
             _ => {
-                return Err(OrgRepositoryError::OrgNotFound.into());
+                return Err(GitHubAdapterError::UnexpectedNodeType.into());
             }
         };
-        let repo = org.repository.ok_or(OrgRepositoryError::RepoNotFound)?;
+        let repo = org.repository.ok_or(RepoError::RepoNotFound)?;
 
         Ok(RepoId::new(repo.id))
     }
