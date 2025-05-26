@@ -1,8 +1,8 @@
 use super::github_graphql_client::GitHubGraphQLClient;
 
-mod issue_impl;
-mod member_impl;
-mod org_impl;
+mod issue_adapter;
+mod member_adapter;
+mod org_adapter;
 mod errors;
 
 #[derive(Clone)]
