@@ -1,4 +1,4 @@
-query GetOpenIssues($id: String!) {
+query GetOpenIssues($id: ID!) {
   node(id: $id) {
     __typename
     ... on Repository {

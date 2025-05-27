@@ -1,4 +1,4 @@
-query GetRepo($id: String!, $repo: String!) {
+query GetRepo($id: ID!, $repo: String!) {
   node(id: $id) {
     __typename
     ... on Organization {

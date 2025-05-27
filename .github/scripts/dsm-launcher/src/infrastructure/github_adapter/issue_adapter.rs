@@ -69,15 +69,14 @@ impl IssueRepository for GitHubAdapter {
     async fn create_issue(&self, issue: Issue) -> Result<IssueId> {
         let logins: Vec<String> = issue.assignees
             .into_iter()
-            .map(|x| x.login)
+            .map(|x| x.id.to_string())
             .collect();
 
         let vars = CreateIssueVars {
             repo_id: issue.repo_id,
             title: issue.title,
             body: issue.body,
-            assignees: logins,
-            type_: issue.team_slug
+            assignee_ids: logins,
         };
 
         let response = self.client.execute::<CreateIssue>(vars).await?;

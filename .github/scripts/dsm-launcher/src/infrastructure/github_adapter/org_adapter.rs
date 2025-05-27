@@ -77,4 +77,3 @@ impl OrgRepository for GitHubAdapter {
         Ok(RepoId::new(repo.id))
     }
 }
-

@@ -106,4 +106,3 @@ impl MemberRepository for GitHubAdapter {
         Ok(TeamId::new(team.id))
     }
 }
-
