@@ -1,6 +1,7 @@
 use anyhow::Result;
 use application::commands::close_issue::CloseIssueCommand;
 use application::commands::create_issue::CreateIssueCommand;
+use application::queries::get_issue_types::GetIssueTypes;
 use application::queries::get_issues::GetIssuesQuery;
 use application::queries::get_org::GetOrgQuery;
 use application::queries::get_repo::GetRepoQuery;
@@ -52,6 +53,9 @@ async fn main() -> Result<()> {
     let get_issues = GetIssuesQuery {
         repo: adapter.clone()
     };
+    let get_issue_types = GetIssueTypes {
+        repo: adapter.clone()
+    };
     let close_issue = CloseIssueCommand {
         repo: adapter.clone()
     };
@@ -78,9 +82,11 @@ async fn main() -> Result<()> {
         get_repo,
         get_team,
         get_team_members,
+        get_issue_types,
         create_issue_,
         &repo_owner,
         &repo_name,
+        team_slug,
         team_slug,
         &title,
         &body

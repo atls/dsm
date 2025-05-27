@@ -2,12 +2,10 @@ use async_trait::async_trait;
 use anyhow::{Result, Ok};
 
 use crate::domain::{
-    repository::IssueRepository,
     issue::{
         Issue, 
-        IssueId
-    },
-    repo::RepoId,
+        IssueId, IssueType
+    }, repo::RepoId, repository::IssueRepository
 };
 use crate::graphql_queries::{
     close_issue::{
@@ -24,11 +22,19 @@ use crate::graphql_queries::{
             Variables as GetOpenIssuesVars, 
             GetOpenIssuesNode
         },
+    },
+    get_issue_types::{
+        GetIssueTypes,
+        get_issue_types::{
+            Variables as GetIssueTypesVars,
+            GetIssueTypesNode,
+        }
     }
 };
 
 use crate::domain::errors::{
     issue::IssueError,
+    issue_types::IssueTypesError,
     repo::RepoError,
 };
 
@@ -66,9 +72,40 @@ impl IssueRepository for GitHubAdapter {
             .collect::<Vec<IssueId>>())
     }
 
+    async fn get_issue_types(&self, repo_id: &RepoId) -> Result<Vec<IssueType>> {
+        let vars = GetIssueTypesVars {
+            id: repo_id.to_string()
+        };
+
+        let response = self.client.execute::<GetIssueTypes>(vars).await?;
+
+        if let Some(errors) = response.errors {
+            return Err(GitHubAdapterError::GraphQL(errors).into());
+        }
+
+        let data = response.data.ok_or(RepoError::RepoDataNotFound)?;
+        let node = data.node.ok_or(RepoError::RepoNodeNotFound)?;
+        let issue_types = match node {
+            GetIssueTypesNode::Repository(repo) => repo.issue_types,
+            _ => return Err(GitHubAdapterError::UnexpectedNodeType.into()),
+        };
+
+        let issue_types = issue_types
+            .ok_or(IssueTypesError::IssueTypesNodeNotFound)?
+            .nodes
+            .ok_or(IssueTypesError::IssueTypesNotFound)?
+            .into_iter()
+            .filter_map(|x| {
+                x.map(|y| IssueType::new(y.id, y.name))
+            })
+            .collect::<Vec<IssueType>>();
+
+        Ok(issue_types)
+    }
+
     async fn create_issue(&self, issue: Issue) -> Result<IssueId> {
         let logins: Vec<String> = issue.assignees
-            .into_iter()
+            .iter()
             .map(|x| x.id.to_string())
             .collect();
 
@@ -77,6 +114,7 @@ impl IssueRepository for GitHubAdapter {
             title: issue.title,
             body: issue.body,
             assignee_ids: logins,
+            issue_type_id: issue.issue_type_id,
         };
 
         let response = self.client.execute::<CreateIssue>(vars).await?;
