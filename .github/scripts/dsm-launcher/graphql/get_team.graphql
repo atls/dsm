@@ -1,0 +1,10 @@
+query GetTeam($id: ID!, $team_slug: String!) {
+    node(id: $id) {
+        __typename
+        ... on Organization {
+            team(slug: $team_slug) {
+                id
+            }
+        }
+    }
+}

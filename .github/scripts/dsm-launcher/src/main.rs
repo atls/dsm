@@ -1,72 +1,96 @@
 use anyhow::Result;
-use graphql_client::{GraphQLQuery, Response};
-use reqwest::Client;
-use std::env;
+use application::commands::close_issue::CloseIssueCommand;
+use application::commands::create_issue::CreateIssueCommand;
+use application::queries::get_issue_types::GetIssueTypes;
+use application::queries::get_issues::GetIssuesQuery;
+use application::queries::get_org::GetOrgQuery;
+use application::queries::get_repo::GetRepoQuery;
+use application::queries::get_team::GetTeamQuery;
+use application::queries::get_team_members::GetTeamMembersQuery;
+use infrastructure::github_adapter::GitHubAdapter;
 use std::fs;
+use std::env;
+use std::rc::Rc;
 
 mod graphql_queries {
     include!(concat!(env!("CARGO_MANIFEST_DIR"), "/graphql/mod.rs"));
 }
 
-use graphql_queries::{
-    get_open_issues::{get_open_issues::Variables as GetIssuesVars, get_open_issues, GetOpenIssues},
-    close_issue::{close_issue::Variables as CloseIssueVars, CloseIssue},
-    create_issue::{create_issue::Variables as CreateIssueVars, CreateIssue},
+mod application;
+mod infrastructure;
+mod domain;
+
+use infrastructure::github_graphql_client::GitHubGraphQLClient;
+use application::use_cases::{
+    close_issues::close_issues,
+    create_issue::create_issue,
 };
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let github_token = env::var("GITHUB_TOKEN")?;
     let repo_owner = env::var("GITHUB_REPO_OWNER")?;
     let repo_name = env::var("GITHUB_REPO_NAME")?;
-
-    let client = Client::builder().user_agent("dsm-launcher").build()?;
-
-    let issues_query = GetOpenIssues::build_query(GetIssuesVars {
-        owner: repo_owner,
-        repo: repo_name,
-    });
-
-    let res = client
-        .post("https://api.github.com/graphql")
-        .bearer_auth(&github_token)
-        .json(&issues_query)
-        .send()
-        .await?
-        .json::<Response<get_open_issues::ResponseData>>()
-        .await?;
-
-    let repo_data = res.data.unwrap().repository.unwrap();
-    let repo_id = repo_data.id;
-    let issues = repo_data.issues.nodes.unwrap();
-
-    for issue in &issues {
-        if let Some(id) = issue.as_ref().and_then(|i| Some(i.id.clone())) {
-            let close_mut = CloseIssue::build_query(CloseIssueVars { id });
-            client
-                .post("https://api.github.com/graphql")
-                .bearer_auth(&github_token)
-                .json(&close_mut)
-                .send()
-                .await?;
-        }
-    }
-
+    let team_slug = "DSM";
     let body = fs::read_to_string("./.github/ISSUE_TEMPLATE/dsm.md")?;
-    let title = format!("[DSM] {}", chrono::Utc::now().date_naive().format("%a %b %d %Y"));
+    let title: String = format!(
+        "[DSM] {}",
+        chrono::Utc::now().date_naive().format("%a %b %d %Y")
+    );
 
-    let create_mut = CreateIssue::build_query(CreateIssueVars {
-        repo_id,
-        title,
-        body,
-    });
+    let client = GitHubGraphQLClient::new(
+        "dsm-launcher".to_string(),
+        env::var("GITHUB_TOKEN")?,
+    )?;
+    
+    let adapter = Rc::new(GitHubAdapter::new(client.clone()));
 
-    client
-        .post("https://api.github.com/graphql")
-        .bearer_auth(&github_token)
-        .json(&create_mut)
-        .send()
-        .await?;
+    let get_org = GetOrgQuery {
+        repo: adapter.clone()
+    };
+    let get_repo = GetRepoQuery {
+        repo: adapter.clone()
+    };
+    let get_issues = GetIssuesQuery {
+        repo: adapter.clone()
+    };
+    let get_issue_types = GetIssueTypes {
+        repo: adapter.clone()
+    };
+    let close_issue = CloseIssueCommand {
+        repo: adapter.clone()
+    };
+    let create_issue_ = CreateIssueCommand {
+        repo: adapter.clone()
+    };
+    let get_team = GetTeamQuery {
+        repo: adapter.clone()
+    };
+    let get_team_members = GetTeamMembersQuery {
+        repo: adapter
+    };
+
+    close_issues(
+        get_org.clone(),
+        get_repo.clone(),
+        get_issues,
+        close_issue,
+        &repo_owner,
+        &repo_name
+    ).await?;
+    create_issue(
+        get_org,
+        get_repo,
+        get_team,
+        get_team_members,
+        get_issue_types,
+        create_issue_,
+        &repo_owner,
+        &repo_name,
+        team_slug,
+        team_slug,
+        &title,
+        &body
+    ).await?;
 
     Ok(())
 }
