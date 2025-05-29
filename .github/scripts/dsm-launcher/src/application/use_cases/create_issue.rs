@@ -52,11 +52,20 @@ pub async fn create_issue<R: OrgRepository, M: MemberRepository, I: IssueReposit
         .ok_or(IssueTypesError::IssueTypeNotFound)?
         .clone();
 
+    let extended_body = format!(
+        "{}\n<details>\n{}\n</details>", 
+        body,
+        members
+            .iter()
+            .map(|x| format!("@{} ", x.login))
+            .collect::<String>()
+    );
+
     let new_issue = Issue {
         id: None,
         repo_id: repo_id.to_string(),
         title: title.to_string(),
-        body: body.to_string(),
+        body: extended_body,
         issue_type_id: issue_type_id,
         assignees: members,
     };
