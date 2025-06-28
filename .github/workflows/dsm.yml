@@ -1,8 +1,8 @@
 name: DSM
 on:
   schedule:
-    # every day at 6:00 UTC (9:00 MSK)
-    - cron: "0 6 * * MON-FRI"
+    # every day at 4:00 UTC (7:00 MSK)
+    - cron: "0 4 * * *"
     
   workflow_dispatch:
 
