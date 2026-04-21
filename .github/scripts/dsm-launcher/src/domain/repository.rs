@@ -1,13 +1,17 @@
-use async_trait::async_trait;
 use anyhow::Result;
+use async_trait::async_trait;
 
 use super::{
-    issue::{Issue, IssueId, IssueType}, member::Member, org::OrgId, repo::RepoId, team::TeamId
+    issue::{Issue, IssueId, IssueType, OpenIssue},
+    member::Member,
+    org::OrgId,
+    repo::RepoId,
+    team::TeamId,
 };
 
 #[async_trait]
 pub trait IssueRepository {
-    async fn get_issues(&self, repo: &RepoId) -> Result<Vec<IssueId>>;
+    async fn get_issues(&self, repo: &RepoId) -> Result<Vec<OpenIssue>>;
     async fn get_issue_types(&self, repo: &RepoId) -> Result<Vec<IssueType>>;
     async fn create_issue(&self, issue: Issue) -> Result<IssueId>;
     async fn close_issue(&self, issue_id: &IssueId) -> Result<()>;

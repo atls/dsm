@@ -1,53 +1,33 @@
+use anyhow::{Ok, Result};
 use async_trait::async_trait;
-use anyhow::{Result, Ok};
 
 use crate::domain::{
-    issue::{
-        Issue, 
-        IssueId, IssueType
-    }, repo::RepoId, repository::IssueRepository
+    issue::{Issue, IssueId, IssueType, OpenIssue},
+    repo::RepoId,
+    repository::IssueRepository,
 };
 use crate::graphql_queries::{
-    close_issue::{
-        CloseIssue, 
-        close_issue::Variables as CloseIssueVars
-    },
-    create_issue::{
-        CreateIssue, 
-        create_issue::Variables as CreateIssueVars,
+    close_issue::{close_issue::Variables as CloseIssueVars, CloseIssue},
+    create_issue::{create_issue::Variables as CreateIssueVars, CreateIssue},
+    get_issue_types::{
+        get_issue_types::{GetIssueTypesNode, Variables as GetIssueTypesVars},
+        GetIssueTypes,
     },
     get_open_issues::{
-        GetOpenIssues, 
-        get_open_issues::{
-            Variables as GetOpenIssuesVars, 
-            GetOpenIssuesNode
-        },
+        get_open_issues::{GetOpenIssuesNode, Variables as GetOpenIssuesVars},
+        GetOpenIssues,
     },
-    get_issue_types::{
-        GetIssueTypes,
-        get_issue_types::{
-            Variables as GetIssueTypesVars,
-            GetIssueTypesNode,
-        }
-    }
 };
 
-use crate::domain::errors::{
-    issue::IssueError,
-    issue_types::IssueTypesError,
-    repo::RepoError,
-};
+use crate::domain::errors::{issue::IssueError, issue_types::IssueTypesError, repo::RepoError};
 
-use super::{
-    errors::GitHubAdapterError,
-    GitHubAdapter
-};
+use super::{errors::GitHubAdapterError, GitHubAdapter};
 
 #[async_trait]
 impl IssueRepository for GitHubAdapter {
-    async fn get_issues(&self, repo_id: &RepoId) -> Result<Vec<IssueId>> {
+    async fn get_issues(&self, repo_id: &RepoId) -> Result<Vec<OpenIssue>> {
         let vars = GetOpenIssuesVars {
-            id: repo_id.to_string()
+            id: repo_id.to_string(),
         };
 
         let response = self.client.execute::<GetOpenIssues>(vars).await?;
@@ -63,18 +43,20 @@ impl IssueRepository for GitHubAdapter {
             _ => {
                 return Err(GitHubAdapterError::UnexpectedNodeType.into());
             }
-        }.issues.nodes;
+        }
+        .issues
+        .nodes;
 
         Ok(issues
             .ok_or(IssueError::IssuesWereNotFound)?
             .into_iter()
-            .filter_map(|x| x.map(|issue| IssueId::new(issue.id)))
-            .collect::<Vec<IssueId>>())
+            .filter_map(|x| x.map(|issue| OpenIssue::new(issue.id, issue.title)))
+            .collect::<Vec<OpenIssue>>())
     }
 
     async fn get_issue_types(&self, repo_id: &RepoId) -> Result<Vec<IssueType>> {
         let vars = GetIssueTypesVars {
-            id: repo_id.to_string()
+            id: repo_id.to_string(),
         };
 
         let response = self.client.execute::<GetIssueTypes>(vars).await?;
@@ -95,19 +77,14 @@ impl IssueRepository for GitHubAdapter {
             .nodes
             .ok_or(IssueTypesError::IssueTypesNotFound)?
             .into_iter()
-            .filter_map(|x| {
-                x.map(|y| IssueType::new(y.id, y.name))
-            })
+            .filter_map(|x| x.map(|y| IssueType::new(y.id, y.name)))
             .collect::<Vec<IssueType>>();
 
         Ok(issue_types)
     }
 
     async fn create_issue(&self, issue: Issue) -> Result<IssueId> {
-        let logins: Vec<String> = issue.assignees
-            .iter()
-            .map(|x| x.id.to_string())
-            .collect();
+        let logins: Vec<String> = issue.assignees.iter().map(|x| x.id.to_string()).collect();
 
         let vars = CreateIssueVars {
             repo_id: issue.repo_id,
@@ -124,19 +101,18 @@ impl IssueRepository for GitHubAdapter {
         }
 
         let response_data = response.data.ok_or(IssueError::EmptyCreateIssueResponse)?;
-        let issue = response_data.create_issue.ok_or(IssueError::CreatedIssueNotFound)?;
+        let issue = response_data
+            .create_issue
+            .ok_or(IssueError::CreatedIssueNotFound)?;
 
         Ok(IssueId::new(
-            issue
-            .issue
-            .ok_or(IssueError::CreatedIssueBodyNotFound)?
-            .id
+            issue.issue.ok_or(IssueError::CreatedIssueBodyNotFound)?.id,
         ))
     }
 
     async fn close_issue(&self, issue_id: &IssueId) -> Result<()> {
         let vars = CloseIssueVars {
-            id: issue_id.to_string()
+            id: issue_id.to_string(),
         };
 
         let response = self.client.execute::<CloseIssue>(vars).await?;

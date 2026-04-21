@@ -11,6 +11,21 @@ pub struct Issue {
     pub assignees: Vec<Member>,
 }
 
+pub struct OpenIssue {
+    pub id: IssueId,
+    pub title: String,
+}
+
+impl OpenIssue {
+    pub fn new(id: String, title: String) -> Self {
+        OpenIssue {
+            id: IssueId::new(id),
+            title,
+        }
+    }
+}
+
+#[derive(Clone)]
 pub struct IssueId(String);
 
 impl IssueId {
