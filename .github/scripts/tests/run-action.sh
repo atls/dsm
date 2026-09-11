@@ -27,6 +27,10 @@ mkdir -p "${fixture_directory}" "${fake_bin}" "${runner_temp}"
 cat >"${fixture_directory}/dsm-launcher" <<'LAUNCHER'
 #!/usr/bin/env bash
 set -euo pipefail
+[[ -f "${TEST_VERIFIED_MARKER}" ]] || {
+  printf 'launcher started before release asset verification\n' >&2
+  exit 1
+}
 printf '%s\n' \
   "token=${GITHUB_TOKEN}" \
   "owner=${GITHUB_REPO_OWNER}" \
@@ -56,7 +60,11 @@ if [[ "$1 $2" == "release download" ]]; then
 fi
 
 if [[ "$1 $2" == "release verify-asset" ]]; then
+  [[ "$3" == "v1.0.0" ]]
+  [[ "$4" == */dsm-launcher-x86_64-unknown-linux-musl.tar.gz ]]
+  [[ "$5 $6" == "--repo atls/dsm" ]]
   [[ "${TEST_TAMPERED:-0}" != "1" ]]
+  touch "${TEST_VERIFIED_MARKER}"
   exit
 fi
 
@@ -66,11 +74,13 @@ chmod +x "${fake_bin}/gh"
 
 output="${temporary_directory}/launcher-output"
 gh_log="${temporary_directory}/gh-log"
+verified_marker="${temporary_directory}/release-asset-verified"
 
 PATH="${fake_bin}:${PATH}" \
 TEST_ARCHIVE="${temporary_directory}/dsm-launcher-x86_64-unknown-linux-musl.tar.gz" \
 TEST_GH_LOG="${gh_log}" \
 TEST_OUTPUT="${output}" \
+TEST_VERIFIED_MARKER="${verified_marker}" \
 DSM_GITHUB_TOKEN="test-token" \
 DSM_TEAM_SLUG="platform" \
 DSM_TEMPLATE_PATH=".github/standup.md" \
@@ -89,12 +99,14 @@ assert_contains "template=/workspace/.github/standup.md" "${output}"
 assert_contains "timezone=Asia/Tokyo" "${output}"
 assert_contains "release download v1.0.0 --repo atls/dsm --pattern dsm-launcher-x86_64-unknown-linux-musl.tar.gz" "${gh_log}"
 assert_contains "release verify-asset v1.0.0" "${gh_log}"
+[[ -f "${verified_marker}" ]] || fail "release asset verification did not complete"
 
-rm -f "${output}"
+rm -f "${output}" "${verified_marker}"
 if PATH="${fake_bin}:${PATH}" \
   TEST_ARCHIVE="${temporary_directory}/dsm-launcher-x86_64-unknown-linux-musl.tar.gz" \
   TEST_GH_LOG="${gh_log}" \
   TEST_OUTPUT="${output}" \
+  TEST_VERIFIED_MARKER="${verified_marker}" \
   TEST_TAMPERED="1" \
   DSM_GITHUB_TOKEN="test-token" \
   DSM_TEAM_SLUG="platform" \
@@ -109,6 +121,7 @@ if PATH="${fake_bin}:${PATH}" \
 fi
 
 [[ ! -e "${output}" ]] || fail "launcher ran after release verification failed"
+[[ ! -e "${verified_marker}" ]] || fail "failed release asset verification was marked successful"
 
 action_metadata="${repository_root}/action.yml"
 assert_contains "DSM_GITHUB_TOKEN: \${{ inputs.github-token }}" "${action_metadata}"

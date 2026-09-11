@@ -79,11 +79,18 @@ channel; the production pin should be the reviewed release commit.
 
 ## Release boundary
 
-The first Marketplace release requires an immutable `v1.0.0` release containing
-`dsm-launcher-x86_64-unknown-linux-musl.tar.gz`, followed by the compatible `v1`
-tag. Marketplace publication, release tags, license selection, and acceptance in
-a private consumer repository are post-merge steps and are not performed by this
-change.
+Before creating `v1.0.0`, enable immutable releases for this repository; the
+policy applies only to releases created after it is enabled. Create `v1.0.0` as
+a draft at the exact release commit, attach
+`dsm-launcher-x86_64-unknown-linux-musl.tar.gz`, and publish the draft only after
+all assets are present. Confirm that GitHub marks the release immutable and that
+both `gh release verify v1.0.0` and `gh release verify-asset v1.0.0 <asset>`
+succeed before creating the compatible `v1` tag at the same commit or publishing
+the Action to Marketplace.
+
+License selection, immutable release and tag creation, Marketplace publication,
+and acceptance in a private consumer repository are post-merge steps and are
+not performed by this change.
 
 ## DSM template
 
