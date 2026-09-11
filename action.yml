@@ -1,0 +1,33 @@
+name: Daily Standup Meetings
+description: Create a daily standup issue for the members of a GitHub organization team
+author: ATLS
+
+inputs:
+  github-token:
+    description: GitHub App installation token used to read the team and manage issues
+    required: true
+  team-slug:
+    description: Slug of the GitHub organization team assigned to the standup issue
+    required: true
+  template-path:
+    description: Path to the standup issue body template in the consumer repository
+    required: true
+  timezone:
+    description: IANA timezone used for the date in the standup issue title
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Run DSM launcher
+      shell: bash
+      env:
+        DSM_GITHUB_TOKEN: ${{ inputs.github-token }}
+        DSM_TEAM_SLUG: ${{ inputs.team-slug }}
+        DSM_TEMPLATE_PATH: ${{ inputs.template-path }}
+        DSM_TIMEZONE: ${{ inputs.timezone }}
+      run: $GITHUB_ACTION_PATH/.github/scripts/run-action.sh
+
+branding:
+  icon: calendar
+  color: blue
