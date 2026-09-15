@@ -1,5 +1,0 @@
-query GetOrg($org: String!) {
-    organization(login: $org) {
-        id
-    }
-}

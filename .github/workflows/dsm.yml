@@ -1,10 +1,18 @@
 name: DSM
+
 on:
   schedule:
     # every day at 4:00 UTC (7:00 MSK)
     - cron: "0 4 * * *"
-    
+
   workflow_dispatch:
+
+concurrency:
+  group: dsm-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   dsm:
@@ -12,7 +20,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/create-github-app-token@v1
         id: app-token
         with:
@@ -20,17 +28,10 @@ jobs:
           private-key: ${{ secrets.DSM_APP_SECRET }}
           owner: ${{ github.repository_owner }}
 
-      - name: Download DSM binary from release
-        uses: robinraju/release-downloader@v1
+      - uses: atls/daily-standup-meetings@v1.0.0
         with:
-          repository: ${{ github.repository }}
-          latest: true
-          fileName: dsm-launcher-x86_64-unknown-linux-musl.tar.gz
-          extract: true
-
-      - name: Run DSM launcher
-        run: ./dsm-launcher
-        env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-          GITHUB_REPO_OWNER: ${{ github.repository_owner }}
-          GITHUB_REPO_NAME: ${{ github.event.repository.name }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          team-slugs: dsm
+          issue-type: DSM
+          template-path: .github/ISSUE_TEMPLATE/dsm.md
+          timezone: Europe/Moscow
